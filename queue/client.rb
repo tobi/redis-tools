@@ -5,6 +5,8 @@ require 'queue'
 start_time = Time.now.to_i
 msg = 0
 
+puts Queue.all
+
 queue = Queue.new("testing")
 queue.subscribe do |obj|
   msg += 1

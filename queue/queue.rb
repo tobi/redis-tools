@@ -10,6 +10,11 @@ class Queue
   
   def initialize(name)
     @queue_name = "queue:#{name}"    
+    $redis.sadd("queues", @queue_name)
+  end
+  
+  def self.all
+    $redis.smembers("queues")
   end
   
   def clear
