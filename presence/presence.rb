@@ -5,14 +5,12 @@ require 'msgpack'
 
 $redis = Redis.new
 
+# By default it uses 60 secs intervals and keeps 10 unique buckets. 
+# This is useful for example for a chat buddy list, allows you to keep presence of all the 
+# people who are online by periodically adding their user ids to the presence class when they
+# do http calls to you. 
 class Presence
-  
-  
-  # By default it uses 60 secs or 1 minute buckets and starts reusing buckets every hour. 
-  
-  # This is useful for example for a chat buddy list, allows you to keep presence of all the 
-  # people who are online by periodically adding their user ids to the presence class when they
-  # do http calls to you. 
+ 
   def initialize(name, seconds = 60, buckets = 10)
     @name = name
     @seconds = seconds
