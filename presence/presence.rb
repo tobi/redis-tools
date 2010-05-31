@@ -24,6 +24,12 @@ class Presence
       $redis.del "#{@name}:#{num-1}"
     end
   end
+  
+  def clear_oder_then(num)
+    @buckets.downto(num+1) do |num|
+      $redis.del "#{@name}:#{recent_bucket_num(num-1)}"
+    end
+  end
       
   def add(token, time = Time.now.to_i)
     $redis.sadd "#{@name}:#{recent_bucket_num(0, time)}", token 
@@ -78,6 +84,27 @@ class TestLibraryFileName < Test::Unit::TestCase
     assert_equal ["1","2","3"], a.present_in_buckets(5).sort    
   end
   
+  def test_clear_oder_then
+    a = Presence.new('clearing')
+    a.clear
+    (0..9).each do |num|
+      $redis.sadd "clearing:#{num}", "DATA"      
+    end
+    a.clear_oder_then(5)
+    assert_equal ['DATA'], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 0)}")
+    assert_equal ['DATA'], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 1)}")
+    assert_equal ['DATA'], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 2)}")
+    assert_equal ['DATA'], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 3)}")
+    assert_equal ['DATA'], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 4)}")
+    assert_equal [], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 5)}")
+    assert_equal [], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 6)}")
+    assert_equal [], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 7)}")
+    assert_equal [], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 8)}")
+    assert_equal [], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 9)}")
+    assert_equal ['DATA'], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 10)}")
+    
+    
+  end
  
     
   
@@ -86,6 +113,7 @@ class TestLibraryFileName < Test::Unit::TestCase
     time = Time.parse("2010-05-30 14:55").to_i
     
     a = Presence.new("test")    
+    a.clear
     assert_equal 5, a.send(:recent_bucket_num,0, time)
     assert_equal 4, a.send(:recent_bucket_num,1, time)
     assert_equal 3, a.send(:recent_bucket_num,2, time)
