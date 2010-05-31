@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'redis'
 require 'digest/md5'
-#require 'msgpack'
+require 'msgpack'
 
 $redis = Redis.new
 
@@ -34,17 +34,21 @@ class Queue
   def subscribe
     loop do            
       hash = $redis.blpop(@queue_name, 0)[1]
-      object = $redis.get("msg:#{hash}")
-      if object
+      
+      if object = $redis.get("msg:#{hash}")
         begin
           yield MessagePack.unpack(object)
-          # Done, remove message from redis. 
-          $redis.del("msg:#{hash}")
-        rescue
+        rescue => e 
+          puts e
           # Error, add the message again to the end of the queue
           $redis.rpush(@queue_name, hash)
           raise
+        else
+          # Done, remove message from redis. 
+          $redis.del("msg:#{hash}")          
         end      
+      else
+        p "did not get an object? hash:#{hash.inspect} obj:#{object.inspect}"
       end
     end    
   end
