@@ -5,14 +5,12 @@ require 'msgpack'
 
 $redis = Redis.new
 
+# By default it uses 60 secs intervals and keeps 10 unique buckets. 
+# This is useful for example for a chat buddy list, allows you to keep presence of all the 
+# people who are online by periodically adding their user ids to the presence class when they
+# do http calls to you. 
 class Presence
-  
-  
-  # By default it uses 60 secs or 1 minute buckets and starts reusing buckets every hour. 
-  
-  # This is useful for example for a chat buddy list, allows you to keep presence of all the 
-  # people who are online by periodically adding their user ids to the presence class when they
-  # do http calls to you. 
+ 
   def initialize(name, seconds = 60, buckets = 10)
     @name = name
     @seconds = seconds
@@ -25,7 +23,7 @@ class Presence
     end
   end
   
-  def clear_oder_then(num)
+  def clear_older_then(num)
     @buckets.downto(num+1) do |num|
       $redis.del "#{@name}:#{recent_bucket_num(num-1)}"
     end
@@ -90,7 +88,7 @@ class TestLibraryFileName < Test::Unit::TestCase
     (0..9).each do |num|
       $redis.sadd "clearing:#{num}", "DATA"      
     end
-    a.clear_oder_then(5)
+    a.clear_older_then(5)
     assert_equal ['DATA'], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 0)}")
     assert_equal ['DATA'], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 1)}")
     assert_equal ['DATA'], $redis.smembers("clearing:#{a.send(:recent_bucket_num, 2)}")
